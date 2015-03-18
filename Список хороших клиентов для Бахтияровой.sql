@@ -1,21 +1,18 @@
-
 SET DATEFORMAT YMD
-
-SELECT * FROM databus.dbo.tBlackListAll WHERE ISDATE(gr) = 0 AND gr IS NOT null
 
 DECLARE @DateFrom1 SMALLDATETIME
 DECLARE @DateFrom2 SMALLDATETIME
 
-SELECT @DateFrom1 = '19000101'--%DateFrom1!
---SELECT @DateFrom2 = %DateFrom2!
+SELECT @DateFrom1 = %DateFrom1!
+SELECT @DateFrom2 = %DateFrom2!
 
 
 
 DECLARE @DateTo1 SMALLDATETIME
 DECLARE @DateTo2 SMALLDATETIME
 
-SELECT @DateTo1 = '19000101'--%DateTo1!
---SELECT @DateTo2 = %DateTo2! 
+SELECT @DateTo1 = %DateTo1!
+SELECT @DateTo2 = %DateTo2! 
 
 
 SELECT @DateFrom2 = ISNULL(NULLIF(@DateFrom2, '19000101'), '20201231')
@@ -169,8 +166,8 @@ WHERE p.ParentID = 2000
 
 --PRINT '-- удаляем нежелательных по фио и дате рождения'
 
---DELETE c
-SELECT distinct c.*, convert(nvarchar(20), c.BirthDate, 112), tbl.GR, CONVERT(DATETIME, tbl.GR) 
+DELETE c
+--SELECT distinct c.*, convert(nvarchar(20), c.BirthDate, 112), tbl.GR, CONVERT(DATETIME, tbl.GR) 
 FROM #client c
 INNER JOIN databus.dbo.tBlackListAll tbl WITH(NOLOCK) ON tbl.NAMEU = c.FIO AND CONVERT(DATETIME, isnull(tbl.GR, '19000101')) = CONVERT(DATETIME, c.BirthDate)
 
@@ -276,13 +273,14 @@ WHERE bla.BadCount > 3
 
 SELECT 
         cl.*
-        , it.Brief
+        , it.Brief as FinOper
         , c.Amount
         , isnull(bla.BadCount, 0) AS BadCount
         , isnull(bla.BadTotal, 0) AS BadTotal
         , cc.CreditDateFrom
         , c.DateTo
         , sd.Name as SDName
+        , ltrim(rtrim(c.Number)) as Number
         , '@' as FormatText
 FROM
         #client cl
@@ -301,4 +299,10 @@ WHERE
                               ,2010000000836
                               ,2010000001762
                               ,2010000001763)
-ORDER BY cl.FIO, c.ContractID                              
+     and not exists (select 1 
+     from tObjClsRelation ocr WITH (NOLOCK)
+          INNER JOIN tObjClassifier oc  WITH (NOLOCK) ON ocr.ObjClassifierID = oc.ObjClassifierID 
+          WHERE oc.ParentID = 2010000928659
+          AND oc.ObjType = 30 and ocr.ObjectID = c.ContractID)   
+                                     
+ORDER BY cl.FIO, c.ContractID  
