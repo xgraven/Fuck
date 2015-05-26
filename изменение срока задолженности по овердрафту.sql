@@ -1,0 +1,7 @@
+SELECT * FROM tDeal WHERE number ='ÎÂÐ/0008/15'
+
+UNION 
+SELECT * FROM tDeal WHERE number ='ÎÂÐ/0011/14'
+
+UPDATE tDeal SET depCmsSum = 60, CalcNKS = 0 WHERE DealID = 2010008987981
+UPDATE tDeal SET depCmsSum = 60, CalcNKS = 0 WHERE DealID = 2010008979067

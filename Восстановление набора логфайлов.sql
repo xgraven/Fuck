@@ -1,0 +1,84 @@
+DECLARE @files TABLE (
+	fname NVARCHAR(50)
+)
+/*
+INSERT @files VALUES ('workdb_20150506020004.trn')
+INSERT @files VALUES ('workdb_20150506021504.trn')
+INSERT @files VALUES ('workdb_20150506023004.trn')
+INSERT @files VALUES ('workdb_20150506024504.trn')
+INSERT @files VALUES ('workdb_20150506030005.trn')
+INSERT @files VALUES ('workdb_20150506031505.trn')
+INSERT @files VALUES ('workdb_20150506033004.trn')
+INSERT @files VALUES ('workdb_20150506034504.trn')
+INSERT @files VALUES ('workdb_20150506040004.trn')
+INSERT @files VALUES ('workdb_20150506041504.trn')
+INSERT @files VALUES ('workdb_20150506043005.trn')
+INSERT @files VALUES ('workdb_20150506044505.trn')
+INSERT @files VALUES ('workdb_20150506050004.trn')
+INSERT @files VALUES ('workdb_20150506051504.trn')
+INSERT @files VALUES ('workdb_20150506053004.trn')
+INSERT @files VALUES ('workdb_20150506054504.trn')
+INSERT @files VALUES ('workdb_20150506060004.trn')
+INSERT @files VALUES ('workdb_20150506061505.trn')
+INSERT @files VALUES ('workdb_20150506063007.trn')
+INSERT @files VALUES ('workdb_20150506064504.trn')
+INSERT @files VALUES ('workdb_20150506070004.trn')
+INSERT @files VALUES ('workdb_20150506071504.trn')
+INSERT @files VALUES ('workdb_20150506073005.trn')
+INSERT @files VALUES ('workdb_20150506074506.trn')
+INSERT @files VALUES ('workdb_20150506080004.trn')
+INSERT @files VALUES ('workdb_20150506081504.trn')
+INSERT @files VALUES ('workdb_20150506083004.trn')
+INSERT @files VALUES ('workdb_20150506084506.trn')
+INSERT @files VALUES ('workdb_20150506090005.trn')
+INSERT @files VALUES ('workdb_20150506091505.trn')
+INSERT @files VALUES ('workdb_20150506093005.trn')
+INSERT @files VALUES ('workdb_20150506094506.trn')
+INSERT @files VALUES ('workdb_20150506100007.trn')
+INSERT @files VALUES ('workdb_20150506101505.trn')
+INSERT @files VALUES ('workdb_20150506103005.trn')
+INSERT @files VALUES ('workdb_20150506104505.trn')
+INSERT @files VALUES ('workdb_20150506110004.trn')
+INSERT @files VALUES ('workdb_20150506111504.trn')
+INSERT @files VALUES ('workdb_20150506113004.trn')
+INSERT @files VALUES ('workdb_20150506114506.trn')
+INSERT @files VALUES ('workdb_20150506120005.trn')
+INSERT @files VALUES ('workdb_20150506121504.trn')
+INSERT @files VALUES ('workdb_20150506123004.trn')
+INSERT @files VALUES ('workdb_20150506124504.trn')
+INSERT @files VALUES ('workdb_20150506130004.trn')
+INSERT @files VALUES ('workdb_20150506131504.trn')
+INSERT @files VALUES ('workdb_20150506133005.trn')*/
+/*
+INSERT @files VALUES ('workdb_20150506134505.trn')
+INSERT @files VALUES ('workdb_20150506140004.trn')
+INSERT @files VALUES ('workdb_20150506141504.trn')
+INSERT @files VALUES ('workdb_20150506143004.trn')
+INSERT @files VALUES ('workdb_20150506144504.trn')
+INSERT @files VALUES ('workdb_20150506150005.trn')
+INSERT @files VALUES ('workdb_20150506151505.trn')
+INSERT @files VALUES ('workdb_20150506153004.trn')
+INSERT @files VALUES ('workdb_20150506154504.trn')
+INSERT @files VALUES ('workdb_20150506160004.trn')
+*/
+INSERT @files VALUES ('workdb_20150506161504.trn')
+INSERT @files VALUES ('workdb_20150506163005.trn')
+INSERT @files VALUES ('workdb_20150506164505.trn')
+
+DECLARE curs CURSOR FOR SELECT fname FROM @files
+DECLARE @fname NVARCHAR(50)
+DECLARE @restorecmd NVARCHAR(500)
+OPEN curs
+FETCH NEXT FROM curs INTO @fname 
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	SELECT @restorecmd = N'RESTORE LOG [reportdb] FROM  DISK = ''E:\logship\workdb\'+@fname+N''' WITH  FILE = 1,  NOUNLOAD,  STATS = 10, NORECOVERY';
+	PRINT @restorecmd
+	exec sp_executesql @restorecmd
+	FETCH NEXT FROM curs INTO @fname
+END
+
+CLOSE curs
+DEALLOCATE curs
+
+--RESTORE DATABASE reportdb WITH RECOVERY

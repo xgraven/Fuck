@@ -88,7 +88,7 @@ CREATE TABLE #PayCount
       ,150   --- “¿–»‘ “”“!
       ,@Comment4
       , 0*/
-SELECT COUNT(DISTINCT r.InstOwnerID)      
+SELECT COUNT(DISTINCT r.InstOwnerID) , COUNT(DISTINCT r.ResourceID)     
 FROM
        tResource r(NOLOCK)
        inner JOIN tDealTransact dt WITH (NOLOCK INDEX = XIE9tDealTransact)

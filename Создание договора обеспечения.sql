@@ -1,50 +1,129 @@
+
+CREATE PROC VKAB_RefinCreateWDealCar (
+	
+ @ContractID NUMERIC(15, 0),
+        
+ @CarMark VARCHAR(50),
+ @CarModel VARCHAR(50),
+ @CarYear VARCHAR(50),
+ @CarState VARCHAR(10),
+ @CarWeight VARCHAR(10),
+ @CarColor VARCHAR(50),
+
+ @VIN   VARCHAR(50),
+ @EngineNum VARCHAR(50),
+ @ChassisNum VARCHAR(50),  
+ 
+ @CarNumber VARCHAR(10),
+ @CarRegion VARCHAR(5),
+
+ @MarketQty MONEY,  -- рыночная
+ @WarrQty MONEY,    -- залоговая
+ @FairQty MONEY     -- справедлива  	
+)
+
+AS
+
+SET NOCOUNT ON 
+
+DELETE FROM pEntAttrValue WHERE SPID = @@spid  
+
+-- номер двигателя      
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000301, @PKey = 0, @Value =  @EngineNum --'NOMDVIG'
+-- госномер
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000316, @PKey = 0, @Value =  @CarNumber -- 'Х950ХВ'
+-- регион
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000317, @PKey = 0, @Value =  @CarRegion --'116'
+-- номер кузова
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000302, @PKey = 0, @Value =  @ChassisNum --'NOMKUZ'
+-- марка
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000299, @PKey = 0, @Value =  @CarMark --'MARKA'
+-- модель
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000300, @PKey = 0, @Value =  @CarModel --'МОДЕЛЬ'
+-- состояние
+IF @CarState = 'Новый'
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000378, @PKey = 0, @Value =  'Новый'
+ELSE
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000378, @PKey = 1, @Value =  'Подержаный'	
+-- VIN
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000303, @PKey = 0, @Value =  @VIN --'VIN1234'
+-- масса
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000001004, @PKey = 0, @Value =  @CarWeight
+-- год
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000000318, @PKey = 0, @Value =  @CarYear
+-- цвет
+EXEC VKAB_AddWarrDealAttrP @InstrumentID =  2010000000630, @AttributeID = 2010000001150, @PKey = 0, @Value =  @CarColor       
+
+
+DECLARE @CtrNum VARCHAR(50)
+DECLARE @ClientID NUMERIC(15, 0)
+DECLARE @InstrumentID NUMERIC(15, 0)
+DECLARE @DateFrom SMALLDATETIME
+DECLARE @DateTo SMALLDATETIME
+
+
+SELECT @CtrNum = 'ДО ' + RTRIM(LTRIM(c.Number))
+, @ClientID = c.InstitutionID
+, @InstrumentID = c.InstrumentID
+, @DateFrom = c.DateFrom
+, @DateTo = cc.CreditDateTo 
+FROM tCOntract c  WITH (NOLOCK)
+INNER JOIN tContractCredit cc  WITH (NOLOCK) ON cc.ContractCreditID = c.ContractID 
+WHERE c.ContractID = @ContractID
+
 declare @ID        DSIDENTIFIER,
         @DealID    DSIDENTIFIER,
         @RetVal    int,
-        @UsePTable DSTINYINT,
         @Flag      DSTINYINT
 
 select @DealID    = 0,
-       @UsePTable = 1,
+
        @Flag      = 0
        
        
-DECLARE @Marka VARCHAR(50)
-DECLARE @Model VARCHAR(50)
-DECLARE @VIN   VARCHAR(50)
-DECLARE @   VARCHAR(50)
-
-SET @Marka = 'VAZ'
-SET @Model = 'LADA'
 
 
+/*
+SET @CarMark = 'VAZ'
+SET @CarModel = 'LADA'
+SET @CarYear = '2012'
+
+SET @VIN = 'VIN12345'
+SET @EngineNum = 'DVIG1234567'
+SET @ChassisNum = 'KUZOV123'*/
 
 
+DECLARE @ObjName VARCHAR(250)
 
-       
+SELECT @ObjName = @CarMark + ' ' + @CarModel   
+
+DECLARE @discount FLOAT
+
+SELECT @discount = @MarketQty / @WarrQty                     
+
 
 exec @RetVal = WCnt_DealInsert
                  @WarrantyCntID       = @ID output,
                  @DealID              = @DealID,
                  @InstrumentID        = 2010000000636,
                  @Brief               = '',
-                 @Name                = 'MAZDA',
+                 @Name                = @ObjName,
                  @InstitutionID       = 0,
                  @Num                 = 1,
-                 @Price               = 77000,
-                 @Qty                 = 77000,
+                 @Price               = @MarketQty,
+                 @Qty                 = @MarketQty,
                  @FundID              = 2,
-                 @QtyApplied          = 66000.01,
+                 @QtyApplied          = @WarrQty,
                  @Comment             = '',
-                 @DepositPrice        = 66000.01,
+                 @DepositPrice        = @WarrQty,
                  @MarginCallType      = 0,
                  @MarginCallValue     = 0,
-                 @Discount            = 0.857143,
+                 @Discount            = @discount,
                  @Liquid              = 0,
-                 @CorrectQty          = 77000,
-                 @QualityFactor       = 0.55,
+                 @CorrectQty          = @FairQty,
+                 @QualityFactor       = 0.0,
                  @Flag                = @Flag,
-                 @UsePTable           = @UsePTable,
+                 @UsePTable           = 1,
                  @InsurerID           = 0,
                  @InsuranceType       = 0,
                  @InsuranceNumber     = '',
@@ -54,7 +133,7 @@ exec @RetVal = WCnt_DealInsert
                  @InsuranceFundID     = 0,
                  @Location            = '',
                  @ManagerType         = 0,
-                 @ManagerID           = 2010000011038,
+                 @ManagerID           = 2010000591321, --- TO DO
                  @Usage               = 0,
                  @UsageCondition      = '',
                  @Alienation          = 0,
@@ -70,65 +149,31 @@ exec @RetVal = WCnt_DealInsert
                  @SecurityType        = 0,
                  @InsCalcPremium      = 0
 
-select @RetVal,
-       @ID
-
-/*
-  insert pEntAttrValue WITH (rowlock) 
-         (
-         SPID
-        ,InterfaceType
-        ,InstrumentID
-        ,ObjectID
-        ,AttributeID
-        ,OnDate
-        ,PKey
-        ,Value
-         )
-  select @@spid
-        ,@InterfaceType
-        ,@InstrumentID
-        ,@ObjectID
-        ,@AttributeID
-        ,@OnDate
-        ,@PKey
-        ,@Value
-        
-*/
 
 
-declare @RetVal     int,
-        @DealID     DSIDENTIFIER,
-        @el         smallint,
-        @Unfixed    int,
-        @Qty        DSMONEY,
-        @QtyApplied DSMONEY,
-        @CorrectQty DSMONEY
 
-select @Unfixed = 0
 
-if @Unfixed = 0
-  select @Qty        = $77000.0000 ,
-         @QtyApplied = $66000.0100,
-         @CorrectQty = $77000.0000
-else
-  select @Qty        = 0,
-         @QtyApplied = 0,
-         @CorrectQty = 0
+
+
+
+
+         
+DECLARE @Days INT
+SELECT @Days = DATEDIFF(dd, @DateFrom, @DateTo)         
 
 exec @RetVal = WDeal_Insert
                  @DealID = @DealID output,
                  @DealType          = 0,
-                 @InstitutionID     = 2010000011038,
+                 @InstitutionID     = @ClientID,
                  @InstrumentID      = 2010000000630,
-                 @Number            = 'ДОГ_ОБЕСП1',
-                 @Date              = '20150409',
-                 @ValueDate         = '20150409',
-                 @DateLast          = '20160430',
-                 @Days              = 387,
-                 @Qty               = @Qty,
+                 @Number            = @CtrNum,
+                 @Date              = @DateFrom,
+                 @ValueDate         = @DateFrom,
+                 @DateLast          = @DateTo,
+                 @Days              = @Days,
+                 @Qty               = @MarketQty,
                  @FundID            = 2,
-                 @QtyApplied        = @QtyApplied,
+                 @QtyApplied        = @WarrQty,
                  @SignCompID        = 0,
                  @SignCompBKID      = 0,
                  @SignContrID       = 0,
@@ -138,7 +183,7 @@ exec @RetVal = WDeal_Insert
                  @InsuranceNumber   = '',
                  @InsuranceDate     = '19000101',
                  @InsuranceDateLast = '19000101',
-                 @Trader            = 2010000000869,
+                 @Trader            = 2010000000869 -- UserID,
                  @Comment           = '',
                  @BranchID          = 2000,
                  @ExecWCnt_Link     = 1, -- переливаем из pWarrantyContent
@@ -148,9 +193,9 @@ exec @RetVal = WDeal_Insert
                  @Responce          = 0,
                  @Insurance         = 0,
                  @BankProductID     = 2010000000004,
-                 @ParentID          = 2010008986062, -- ИД кредитного договора
-                 @ParentInstrumentID = 2010000001762, -- ИД ФО кредитного договора
-                 @CorrectQty        = @CorrectQty,
+                 @ParentID          = @ContractID, -- ИД кредитного договора
+                 @ParentInstrumentID = @InstrumentID, -- ИД ФО кредитного договора
+                 @CorrectQty        = @FairQty,
                  @QualityFactor     = 0,
                  @NotaryID          = 0,
                  @NotaryDate        = '19000101',
@@ -179,12 +224,7 @@ exec @RetVal = WDeal_Insert
                  @ContractorID      = 0,
                  @InterfaceInput    = 1,
                  @InsCalcPremium    = 0
-if exists(select Number
-            from pWErrorLine WITH (NOLOCK index=XIE0pWErrorLine)
-           where SPID = @@spid)
-  select @el = 1
-else
-  select @el = 0
 
-select @RetVal, @el, @DealID
-        
+
+
+SELECT * FROM tUser WHERE UserID = 2010000000869        
